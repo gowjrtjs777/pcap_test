@@ -31,9 +31,10 @@ int main(int argc, char* argv[]) {
     int res = pcap_next_ex(handle, &header, &packet);
     if (res == 0) continue;
     if (res == -1 || res == -2) break;
-    if(*(packet+23)==17){
+    if(*(packet+23)==6){
       cnt++;
       printf("\n\n*****%d번째 TCP 입니다.*****\n",cnt);
+      int ost=0;
       printf("Ethernet Source MAC Address : (");
       for(int i=6;i<12;i++){
 	printf("%02X",*(packet+i));
@@ -48,27 +49,30 @@ int main(int argc, char* argv[]) {
 	  printf(":");
       }
       printf(")\n");
+      ost+=14;
       printf("Source IP Address : ");
-      for(int i=26;i<30;i++){
+      for(int i=ost+12;i<ost+16;i++){
 	printf("%d",*(packet+i));
-	if(i!=29)
+	if(i!=ost+15)
 	  printf(".");
       }
       printf("\n");
       printf("Destination IP Address : ");
-      for(int i=30;i<34;i++){
+      for(int i=ost+16;i<ost+20;i++){
 	printf("%d",*(packet+i));
-	if(i!=33)
+	if(i!=ost+19)
 	  printf(".");
       }
       printf("\n");
-      printf("TCP's Source Port : %d",256*(*(packet+34))+(*(packet+35)));
+      ost+=(*(packet+ost+1)%16)*4;
+      printf("TCP's Source Port : %d",256*(*(packet+ost))+(*(packet+ost+1)));
       printf("\n");
-      printf("TCP's Destination Port : %d",256*(*(packet+36))+(*(packet+37)));
+      printf("TCP's Destination Port : %d",256*(*(packet+ost))+(*(packet+ost+1)));
       printf("\n");
-      if(header->caplen>54){
+      ost+=(*(packet+ost+12)/16)*4;
+      if(header->caplen>ost){
         printf("Payload : ");
-        for(int i=54;i<min(header->caplen,54+32);i++)
+        for(int i=ost;i<min(header->caplen,ost+32);i++)
 	  printf("%02X ",*(packet+i));
 	printf("\n");
       }
